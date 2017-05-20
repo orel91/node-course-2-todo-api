@@ -10,7 +10,9 @@ const todos = [{
     text: "First test todo"
 }, {
     _id: new ObjectID(),
-    text: "Second text todo"
+    text: "Second text todo",
+    completed: true,
+    completedAt: 333
 }];
 
 beforeEach(done => {
@@ -110,7 +112,6 @@ describe("DELETE /todos/:id", () => {
             .delete(`/todos/${id}`)
             .expect(200)
             .expect(res => {
-                console.log(res.body);
                 expect(res.body.todo.text).toBe(todos[1].text);
             })
             .end((err, res) => {
@@ -138,6 +139,49 @@ describe("DELETE /todos/:id", () => {
         request(app)
             .delete("/todos/123")
             .expect(404)
+            .end(done);
+    });
+});
+
+describe("PATCH /todos/:id", () => {
+    it("should update a todo", done => {
+        const newValues = {
+            text: "Text from first test",
+            completed: true
+        };
+        const id = todos[0]._id.toHexString();
+
+        request(app)
+            .patch(`/todos/${id}`)
+            .send(newValues)
+            .expect(200)
+            .expect(res => {
+                expect(res.body.todo.text).toNotBe(todos[0].text);
+                expect(res.body.todo.text).toBe(newValues.text);
+                expect(res.body.todo.completed).toBe(true);
+                expect(res.body.todo.completedAt).toBeA("number");
+            })
+            .end(done);
+    });
+
+    it("should clear completedAt when todo is not completed", done => {
+
+        const newValues = {
+            text: "Text from second test",
+            completed: false
+        };
+        const id = todos[1]._id.toHexString();
+
+        request(app)
+            .patch(`/todos/${id}`)
+            .send(newValues)
+            .expect(200)
+            .expect(res => {
+                expect(res.body.todo.text).toNotBe(todos[1].text);
+                expect(res.body.todo.text).toBe(newValues.text);
+                expect(res.body.todo.completed).toBe(false);
+                expect(res.body.todo.completedAt).toNotExist();
+            })
             .end(done);
     });
 });
